@@ -31,31 +31,46 @@ def _call_mcp_tool(tool_name: str, tool_input: dict) -> dict:
     """
     Gọi MCP tool.
 
-    Sprint 3 TODO: Implement bằng cách import mcp_server hoặc gọi HTTP.
-
-    Hiện tại: Import trực tiếp từ mcp_server.py (trong-process mock).
+    Sprint 3 Bonus: Gọi qua HTTP server thực tế nếu đang chạy.
+    Fallback: Import trực tiếp từ mcp_server.py (trong-process mock).
     """
     from datetime import datetime
+    import requests
 
+    result = None
     try:
-        # TODO Sprint 3: Thay bằng real MCP client nếu dùng HTTP server
-        from mcp_server import dispatch_tool
-        result = dispatch_tool(tool_name, tool_input)
-        return {
-            "tool": tool_name,
-            "input": tool_input,
-            "output": result,
-            "error": None,
-            "timestamp": datetime.now().isoformat(),
-        }
-    except Exception as e:
-        return {
-            "tool": tool_name,
-            "input": tool_input,
-            "output": None,
-            "error": {"code": "MCP_CALL_FAILED", "reason": str(e)},
-            "timestamp": datetime.now().isoformat(),
-        }
+        # Thử gọi qua HTTP MCP Server (Sprint 3 Bonus)
+        resp = requests.post(
+            "http://localhost:8000/tools/call",
+            json={"tool_name": tool_name, "tool_input": tool_input},
+            timeout=2
+        )
+        if resp.status_code == 200:
+            result = resp.json()
+    except requests.exceptions.RequestException:
+        # Fallback về in-process nếu MCP HTTP server không bật
+        result = None
+
+    if result is None:
+        try:
+            from mcp_server import dispatch_tool
+            result = dispatch_tool(tool_name, tool_input)
+        except Exception as e:
+            return {
+                "tool": tool_name,
+                "input": tool_input,
+                "output": None,
+                "error": {"code": "MCP_CALL_FAILED", "reason": str(e)},
+                "timestamp": datetime.now().isoformat(),
+            }
+
+    return {
+        "tool": tool_name,
+        "input": tool_input,
+        "output": result,
+        "error": None,
+        "timestamp": datetime.now().isoformat(),
+    }
 
 
 # ─────────────────────────────────────────────

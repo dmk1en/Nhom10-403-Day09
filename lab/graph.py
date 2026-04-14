@@ -139,6 +139,12 @@ def supervisor_node(state: AgentState) -> AgentState:
     if risk_high and route != "human_review":
         route_reason += " | risk_high flagged"
 
+    # Ghi log chọn MCP hay không chọn MCP theo yêu cầu của Sprint 3:
+    if needs_tool:
+        route_reason += " | chọn MCP"
+    else:
+        route_reason += " | không chọn MCP"
+
     state["supervisor_route"] = route
     state["route_reason"] = route_reason
     state["needs_tool"] = needs_tool
