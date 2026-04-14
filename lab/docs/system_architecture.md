@@ -1,61 +1,34 @@
 # System Architecture — Lab Day 09
 
-**Nhóm:** ___________  
-**Ngày:** ___________  
+**Nhóm:** Nhóm 10  
+**Ngày:** 2026-04-14  
 **Version:** 1.0
 
 ---
 
 ## 1. Tổng quan kiến trúc
 
-> Mô tả ngắn hệ thống của nhóm: chọn pattern gì, gồm những thành phần nào.
-
 **Pattern đã chọn:** Supervisor-Worker  
-**Lý do chọn pattern này (thay vì single agent):**
-
-_________________
+**Lý do chọn pattern này (thay vì single agent):** Quản lý trạng thái và độ phức tạp tốt hơn khi pipeline có nhiều yêu cầu kết nối với bên ngoài (ví dụ gọi MCP Check Policy) hoặc cần rẽ nhánh chuyên biệt vào Retrieval. Nó giúp hệ thống dễ debug, vì khi lỗi xảy ra, ta biết ngay do bước nào (Routing hay worker retrieval làm sai).
 
 ---
 
 ## 2. Sơ đồ Pipeline
 
-> Vẽ sơ đồ pipeline dưới dạng text, Mermaid diagram, hoặc ASCII art.
-> Yêu cầu tối thiểu: thể hiện rõ luồng từ input → supervisor → workers → output.
-
-**Ví dụ (ASCII art):**
-```
-User Request
-     │
-     ▼
-┌──────────────┐
-│  Supervisor  │  ← route_reason, risk_high, needs_tool
-└──────┬───────┘
-       │
-   [route_decision]
-       │
-  ┌────┴────────────────────┐
-  │                         │
-  ▼                         ▼
-Retrieval Worker     Policy Tool Worker
-  (evidence)           (policy check + MCP)
-  │                         │
-  └─────────┬───────────────┘
-            │
-            ▼
-      Synthesis Worker
-        (answer + cite)
-            │
-            ▼
-         Output
-```
-
 **Sơ đồ thực tế của nhóm:**
 
+```mermaid
+graph TD
+    A[User Request] --> B(Supervisor Node)
+    B -->|task contains 'refund', 'policy'| C[Policy Tool Worker]
+    B -->|task contains 'access', 'emergency'| C
+    B -->|default / SLA P1| D[Retrieval Worker]
+    
+    C -->|mcp_tools_called, policy_result| E[Synthesis Worker]
+    D -->|retrieved_chunks| E
+    
+    E -->|Answer + Citation| F[Output Generation]
 ```
-[NHÓM ĐIỀN VÀO ĐÂY]
-```
-
----
 
 ## 3. Vai trò từng thành phần
 
@@ -63,37 +36,37 @@ Retrieval Worker     Policy Tool Worker
 
 | Thuộc tính | Mô tả |
 |-----------|-------|
-| **Nhiệm vụ** | ___________________ |
-| **Input** | ___________________ |
-| **Output** | supervisor_route, route_reason, risk_high, needs_tool |
-| **Routing logic** | ___________________ |
-| **HITL condition** | ___________________ |
+| **Nhiệm vụ** | Nhận task và điều phối worker xử lý phù hợp dựa vào từ khóa |
+| **Input** | `state["task"]` (Câu hỏi gốc của người dùng) |
+| **Output** | `supervisor_route`, `route_reason` |
+| **Routing logic** | Sử dụng regex keyword matching (`refund`, `policy`, `access` -> policy_tool_worker; còn lại retrieval) |
+| **HITL condition** | Khi cần hỏi xác nhận (chưa cấu hình chi tiết ở bước này) |
 
 ### Retrieval Worker (`workers/retrieval.py`)
 
 | Thuộc tính | Mô tả |
 |-----------|-------|
-| **Nhiệm vụ** | ___________________ |
-| **Embedding model** | ___________________ |
-| **Top-k** | ___________________ |
-| **Stateless?** | Yes / No |
+| **Nhiệm vụ** | Truy xuất vector DB Chroma để lấy context |
+| **Embedding model** | `all-MiniLM-L6-v2` |
+| **Top-k** | 3 chunks |
+| **Stateless?** | Yes |
 
 ### Policy Tool Worker (`workers/policy_tool.py`)
 
 | Thuộc tính | Mô tả |
 |-----------|-------|
-| **Nhiệm vụ** | ___________________ |
-| **MCP tools gọi** | ___________________ |
-| **Exception cases xử lý** | ___________________ |
+| **Nhiệm vụ** | Phân tích policy và gọi external tool để xử lý các edge cases |
+| **MCP tools gọi** | `search_kb`, `get_ticket_info` |
+| **Exception cases xử lý** | Chính sách ngoại lệ như Flash Sale, tài khoản kỹ thuật số |
 
 ### Synthesis Worker (`workers/synthesis.py`)
 
 | Thuộc tính | Mô tả |
 |-----------|-------|
-| **LLM model** | ___________________ |
-| **Temperature** | ___________________ |
-| **Grounding strategy** | ___________________ |
-| **Abstain condition** | ___________________ |
+| **LLM model** | `gpt-4o-mini` |
+| **Temperature** | 0.0 (Grounding chặt chẽ) |
+| **Grounding strategy** | Chỉ được trả lời bằng evidence cung cấp, không bịa đặt |
+| **Abstain condition** | Khi không tìm thấy thông tin |
 
 ### MCP Server (`mcp_server.py`)
 
@@ -101,14 +74,10 @@ Retrieval Worker     Policy Tool Worker
 |------|-------|--------|
 | search_kb | query, top_k | chunks, sources |
 | get_ticket_info | ticket_id | ticket details |
-| check_access_permission | access_level, requester_role | can_grant, approvers |
-| ___________________ | ___________________ | ___________________ |
 
 ---
 
 ## 4. Shared State Schema
-
-> Liệt kê các fields trong AgentState và ý nghĩa của từng field.
 
 | Field | Type | Mô tả | Ai đọc/ghi |
 |-------|------|-------|-----------|
@@ -120,7 +89,6 @@ Retrieval Worker     Policy Tool Worker
 | mcp_tools_used | list | Tool calls đã thực hiện | policy_tool ghi |
 | final_answer | str | Câu trả lời cuối | synthesis ghi |
 | confidence | float | Mức tin cậy | synthesis ghi |
-| ___________________ | ___________________ | ___________________ | ___________________ |
 
 ---
 
@@ -131,18 +99,13 @@ Retrieval Worker     Policy Tool Worker
 | Debug khi sai | Khó — không rõ lỗi ở đâu | Dễ hơn — test từng worker độc lập |
 | Thêm capability mới | Phải sửa toàn prompt | Thêm worker/MCP tool riêng |
 | Routing visibility | Không có | Có route_reason trong trace |
-| ___________________ | ___________________ | ___________________ |
 
 **Nhóm điền thêm quan sát từ thực tế lab:**
-
-_________________
+> Khi gọi Supervisor, ta biết rõ ràng log `route_reason`. Thay vì chỉ biết đáp án của RAG fail, bây giờ có thể khẳng định luôn ví dụ như: do Keyword filter nhảy sai hướng, làm worker này được gọi để tìm policy nhưng thực tế user muốn tìm SLA.
 
 ---
 
 ## 6. Giới hạn và điểm cần cải tiến
 
-> Nhóm mô tả những điểm hạn chế của kiến trúc hiện tại.
-
-1. ___________________
-2. ___________________
-3. ___________________
+1. Thời gian tạo câu trả lời chậm hơn một lượng nhỏ vì ta phải đi qua Graph orchestration, tốn thêm chi phí overhead so với gọi chain 1 mạch.
+2. Từ khóa cố định (Keyword matching) ở Supervisor khá cứng nhắc, dễ sai nếu câu hỏi user có từ đồng nghĩa.
