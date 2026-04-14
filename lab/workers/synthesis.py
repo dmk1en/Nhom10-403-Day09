@@ -33,10 +33,8 @@ Quy tắc nghiêm ngặt:
 
 def _call_llm(messages: list) -> str:
     """
-    Gọi LLM để tổng hợp câu trả lời.
-    TODO Sprint 2: Implement với OpenAI hoặc Gemini.
+    Gọi LLM để tổng hợp câu trả lời sử dụng OpenAI.
     """
-    # Option A: OpenAI
     try:
         from openai import OpenAI
         client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -44,25 +42,12 @@ def _call_llm(messages: list) -> str:
             model="gpt-4o-mini",
             messages=messages,
             temperature=0.1,  # Low temperature để grounded
-            max_tokens=500,
+            max_tokens=600,
         )
         return response.choices[0].message.content
-    except Exception:
-        pass
-
-    # Option B: Gemini
-    try:
-        import google.generativeai as genai
-        genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-        model = genai.GenerativeModel("gemini-1.5-flash")
-        combined = "\n".join([m["content"] for m in messages])
-        response = model.generate_content(combined)
-        return response.text
-    except Exception:
-        pass
-
-    # Fallback: trả về message báo lỗi (không hallucinate)
-    return "[SYNTHESIS ERROR] Không thể gọi LLM. Kiểm tra API key trong .env."
+    except Exception as e:
+        print(f"⚠️  OpenAI synthesis failed: {e}")
+        return f"[SYNTHESIS ERROR] Không thể gọi OpenAI API: {e}"
 
 
 def _build_context(chunks: list, policy_result: dict) -> str:
