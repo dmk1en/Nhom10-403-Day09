@@ -168,5 +168,4 @@ Nhóm sẽ nâng cấp 2 điểm:
 1. Module Supervisor sử dụng `Semantic Router` kết hợp LLM Classify thay thế cho Regex Matching hiện tại, giúp chặn triệt để hơn các truy vấn bất ngờ.
 2. Tại Worker Synthesis, thiết lập cơ chế **Inline Citation** (ví dụ [1], [2]) trong từng câu trả lời giúp UX mượt hơn.
 
-*File này lưu tại: `reports/group_report.md`*  
-*Commit sau 18:00 được phép theo SCORING.md*
+
