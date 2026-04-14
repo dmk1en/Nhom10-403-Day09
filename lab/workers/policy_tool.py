@@ -47,6 +47,7 @@ def _call_mcp_tool(tool_name: str, tool_input: dict) -> dict:
         )
         if resp.status_code == 200:
             result = resp.json()
+            print(f"  [MCP] Called tool '{tool_name}' via HTTP server")
     except requests.exceptions.RequestException:
         # Fallback về in-process nếu MCP HTTP server không bật
         result = None
@@ -55,6 +56,7 @@ def _call_mcp_tool(tool_name: str, tool_input: dict) -> dict:
         try:
             from mcp_server import dispatch_tool
             result = dispatch_tool(tool_name, tool_input)
+            print(f"  [MCP] Called tool '{tool_name}' via In-Process Fallback")
         except Exception as e:
             return {
                 "tool": tool_name,
@@ -195,14 +197,15 @@ def run(state: dict) -> dict:
 
         # Step 3: Nếu cần thêm info từ MCP (e.g., ticket status), gọi get_ticket_info
         if needs_tool and any(kw in task.lower() for kw in ["ticket", "p1", "jira"]):
-            mcp_result = _call_mcp_tool("get_ticket_info", {"ticket_id": "P1-LATEST"})
-            state["mcp_tools_used"].append(mcp_result)
+            mcp_output = _call_mcp_tool("get_ticket_info", {"ticket_id": "P1-LATEST"})
+            state["mcp_tool_called"].append(mcp_output.get("tool"))
+            state["mcp_result"].append(mcp_output.get("output"))
             state["history"].append(f"[{WORKER_NAME}] called MCP get_ticket_info")
 
         worker_io["output"] = {
             "policy_applies": policy_result["policy_applies"],
             "exceptions_count": len(policy_result.get("exceptions_found", [])),
-            "mcp_calls": len(state["mcp_tools_used"]),
+            "mcp_calls": len(state["mcp_tool_called"]),
         }
         state["history"].append(
             f"[{WORKER_NAME}] policy_applies={policy_result['policy_applies']}, "
