@@ -11,6 +11,7 @@ Chạy thử:
 
 import json
 import os
+import re
 from datetime import datetime
 from typing import TypedDict, Literal, Optional
 
@@ -95,7 +96,6 @@ def supervisor_node(state: AgentState) -> AgentState:
     #   3. SLA / ticket / escalation / P1    → retrieval_worker (explicit)
     #   4. Default                           → retrieval_worker
 
-    import re
     route = "retrieval_worker"
     route_reason = "default: no specific keyword matched"
     needs_tool = False
