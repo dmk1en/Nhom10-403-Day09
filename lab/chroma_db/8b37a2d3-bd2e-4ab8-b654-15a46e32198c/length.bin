@@ -1,0 +1,1 @@
+invalid type: string "Quyền phải được thu hồi trong các trường hợp:\n- Nhân viên nghỉ việc: Thu hồi ngay trong ngày cuối.\n- Hết hạn contract: Thu hồi đúng ngày hết hạn.\n- Chuyển bộ phận: Điều chỉnh trong 3 ngày làm việc.", expected a boolean4.\nBước 5: Nhân viên nhận thông báo qua email khi quyền được cấp.", expected a boole
