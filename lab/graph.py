@@ -40,7 +40,8 @@ class AgentState(TypedDict):
     retrieved_chunks: list              # Output từ retrieval_worker
     retrieved_sources: list             # Danh sách nguồn tài liệu
     policy_result: dict                 # Output từ policy_tool_worker
-    mcp_tools_used: list                # Danh sách MCP tools đã gọi
+    mcp_tool_called: list               # Danh sách MCP tools đã gọi (Sprint 3 DoD)
+    mcp_result: list                    # Kết quả trả về từ MCP calls (Sprint 3 DoD)
 
     # Final output
     final_answer: str                   # Câu trả lời tổng hợp
@@ -66,7 +67,8 @@ def make_initial_state(task: str) -> AgentState:
         "retrieved_chunks": [],
         "retrieved_sources": [],
         "policy_result": {},
-        "mcp_tools_used": [],
+        "mcp_tool_called": [],
+        "mcp_result": [],
         "final_answer": "",
         "sources": [],
         "confidence": 0.0,
