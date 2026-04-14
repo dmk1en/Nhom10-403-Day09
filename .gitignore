@@ -9,5 +9,4 @@ day10/lab/data/grading_questions.json
 
 .env
 */venv/
-artifacts/
 **/__pycache__/
