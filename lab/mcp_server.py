@@ -32,6 +32,10 @@ import os
 import json
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+from dotenv import load_dotenv
+
+# Nạp biến môi trường từ file .env
+load_dotenv()
 
 
 # ─────────────────────────────────────────────
