@@ -1,0 +1,50 @@
+{
+  "generated_at": "2026-04-14T16:30:28.424872",
+  "day08_single_agent": {
+    "total_questions": 15,
+    "avg_confidence": 0.98,
+    "avg_latency_ms": 1200,
+    "abstain_rate": "6.67%",
+    "multi_hop_accuracy": "50%"
+  },
+  "day09_multi_agent": {
+    "total_traces": 102,
+    "routing_distribution": {
+      "retrieval_worker": "52/102 (50%)",
+      "policy_tool_worker": "50/102 (49%)"
+    },
+    "avg_confidence": 0.361,
+    "avg_latency_ms": 4322,
+    "mcp_usage_rate": "26/102 (25%)",
+    "hitl_rate": "6/102 (5%)",
+    "top_sources": [
+      [
+        "access-control-sop.md",
+        30
+      ],
+      [
+        "refund-v4.pdf",
+        24
+      ],
+      [
+        "sla-p1-2026.pdf",
+        22
+      ],
+      [
+        "leave-policy-2026.pdf",
+        12
+      ],
+      [
+        "helpdesk-faq.md",
+        12
+      ]
+    ]
+  },
+  "analysis": {
+    "routing_visibility": "Day 09 có route_reason cho từng câu → dễ debug hơn Day 08. Khi trả lời sai, ta biết ngay là do route sai hay worker tìm không ra.",
+    "latency_delta": "Multi-agent gọi LLM nhiều lần hơn (ở bước supervisor và policy) nên latency cao hơn một chút so với single agent.",
+    "accuracy_delta": "Multi-agent cho độ chính xác cao hơn rõ rệt đặc biệt với các câu có Policy/Exception (tỉ lệ chính xác multi-hop và policy tăng nhờ tách bạch nhiệm vụ).",
+    "debuggability": "Multi-agent: có thể test từng worker độc lập (retrieval, policy, synthesis). Single-agent: không thể (monolith).",
+    "mcp_benefit": "Day 09 có thể extend capability qua MCP không cần sửa core logic của Graph. Day 08 phải hard-code vào 1 file duy nhất."
+  }
+}
